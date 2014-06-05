@@ -157,10 +157,10 @@ init:- P = [4,4,4,4,4,4,4,4,4,4,4,4],
     asserta(score_courant2(0)),
     asserta(prochain_joueur(joueur1)),
     afficher_plateau(P, joueur1),
-    write('\nAu joueur1 de commencer.'),
     nl,
     write('1. Partie humain-humain\n'),
     write('2. Partie humain-IA\n'),
+	write('3. Partie IA-IA\n'),
     write('Reponse:'),
     read(Rep),
     traitement_reponse(Rep).
@@ -179,6 +179,7 @@ init2:- P = [4,4,4,4,4,4,0,0,0,0,0,1],
 % Réponse à la question de init
 traitement_reponse(1):- partie_humain_humain.
 traitement_reponse(2):- partie_humain_ia.
+traitement_reponse(3):- partie_ia_ia.
  
 % vérifie que les cases de la liste comprises entre l'indice i et j ne contiennent que des 0
 que_des_zeros([T|Q],Cour,Deb,Fin):-
@@ -283,6 +284,14 @@ passage_nouvel_etat(Case):-
 	afficher_plateau(Plat_res2,joueur1),!.
  
 % créé l'état suivant du plateau et de la partie pour le jeu de la case Case
+etat_suivant(Case,Score,Plat):-
+	plat_courant(Plat),
+	val_case(Plat,Case,Val),
+	Val = 0,
+	prochain_joueur(J),
+	J = joueur1,
+	score_courant1(Score).
+	
 etat_suivant(Case,Score_res,Plat_res):-
 	prochain_joueur(J),
 	J = joueur1,
@@ -302,19 +311,53 @@ etat_suivant(Case,Score_res,Plat_res):-
 	recuperer_billes(J,Case_finale,Plat_tmp, Plat_res,Score,Score_res),
 	\+champ_adverse_vide(Plat_res, J),!.
  
-% mise à jour de la varible meilleure case si la nouvelle case rapporte un score supérieur
-fail_sauf_six(6).
+% détermine l'indice de la dernière case non nulle dans le champ du joueur courant
+derniere_case_non_nulle_champ_courant(Case):-
+	prochain_joueur(Joueur),Joueur=joueur1,plat_courant(Plat),passage_sous_listes(Plat,[L|_]),derniere_case_non_nulle(L,Case).
 
+derniere_case_non_nulle_champ_courant(Case):-
+	prochain_joueur(Joueur),Joueur=joueur2,plat_courant(Plat),passage_sous_listes(Plat,[_|[L]]),derniere_case_non_nulle(L,Case).
+
+% détermine l'indice du premier élement non nul de la liste, 1er élement à l'indice 1
+premiere_case_non_nulle([0|Q],Res):- premiere_case_non_nulle(Q,Res1), Res is Res1+1,!.
+premiere_case_non_nulle([_|_],1):-!.
+premiere_case_non_nulle(_,0):-!.
+
+% détermine l'indice du dernier élément non nul dans un liste de 6 élements, (indices de 1 à 6)
+derniere_case_non_nulle(L,Case):-
+	retourner_liste(L,LI),
+	premiere_case_non_nulle(LI,C),
+	Case is 6-C+1.
+
+% met à jour la valeur de la meilleure case à jouer
+% échoue volontairement à tous le coups sauf à la dernière case non nulle du joueur
+% pour assurer que toutes les posssibilités sont étudiées
+% cette version est randomisée pour un choix aléatoire parmi les coups équivalents
 maj_meilleure_case(Nv_score,Case,Nv_plat):-
 	meilleur_score(Score),
-	Nv_score >= Score,
+	Nv_score > Score,
 	retractall(meilleur_score(_)),
 	retractall(meilleure_case(_)),
 	retractall(meilleur_plateau(_)),
 	asserta(meilleur_score(Nv_score)),
 	asserta(meilleure_case(Case)),
-	asserta(meilleur_plateau(Nv_plat)),!,fail_sauf_six(6).
- 
+	asserta(meilleur_plateau(Nv_plat)),!,
+	derniere_case_non_nulle_champ_courant(Case).
+
+maj_meilleure_case(Nv_score,Case,Nv_plat):-
+	meilleur_score(Score),
+	Nv_score = Score,
+	random(R),R > 0.5,
+	retractall(meilleur_score(_)),
+	retractall(meilleure_case(_)),
+	retractall(meilleur_plateau(_)),
+	asserta(meilleur_score(Nv_score)),
+	asserta(meilleure_case(Case)),
+	asserta(meilleur_plateau(Nv_plat)),!,
+	derniere_case_non_nulle_champ_courant(Case).
+
+maj_meilleure_case(_,Case,_):- derniere_case_non_nulle_champ_courant(Case).
+
 % ce prédicat est appelé sur chaque case de 1 à 6 par generer_etats
 generer_etats_interne(Case):-
 	etat_suivant(Case,Score_res,Plat_res),
