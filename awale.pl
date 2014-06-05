@@ -15,7 +15,7 @@ remplacer(1,[_|Q],X,[X|Q]).
 remplacer(N,[T|Q],X,[T|Qr]):- M is N-1, remplacer(M,Q,X,Qr).
  
 % distribution des graines d'une case pour obtenir le nouvel état du plateau
-distribuer_graines2(Case_courante, Case_interdite, 0, Plat, Res_plat, Case_finale) :-
+distribuer_graines2(Case_courante, _, 0, Plat, Res_plat, Case_finale) :-
     Res_plat = Plat,
     Case_finale is Case_courante - 1.
    
@@ -38,7 +38,7 @@ distribuer_graines2(Case_courante, Case_interdite, Nb_graines, Plat, Res_plat, C
     distribuer_graines2(Case1, Case_interdite, Nb_graines, Plat, Res_plat, Case_finale).
  
 % suppression de toutes les graines de la case i
-vider_case([T|Q],1, [R|Q]):- !, R = 0.
+vider_case([_|Q],1, [R|Q]):- !, R = 0.
 vider_case([X|Y], I, [X|P]) :- Z is I-1, vider_case(Y, Z, P).
  
 % ajoutery à la variable x
@@ -108,7 +108,7 @@ deplacer_case(joueur2,_,Case,_,_):-
     write('Impossible de jouer cette case\n'),
     !,fail.
 
-deplacer_case(_, Plat, Case, Res_plat, Case_finale):-
+deplacer_case(_, Plat, Case, _, _):-
     val_case(Plat, Case, Val),
     Val = 0,
     asserta(erreur('La case choisie est vide!')),!,fail.
@@ -142,7 +142,7 @@ recuperer_billes(J,Case_courante, Plat, Res_plat, Score, Res_score):-
     Case_prec is Case_courante -1,
     recuperer_billes(J,Case_prec, Tmp_plat, Res_plat, Tmp_score, Res_score),!.
    
-recuperer_billes(_,Case_courante, Plat, Res_plat, Score, Res_score):-
+recuperer_billes(_,_, Plat, Res_plat, Score, Res_score):-
     Res_score = Score,
     Res_plat = Plat.
    
@@ -211,7 +211,7 @@ test_intro_impossible(Case, Plat,J):-
     Case1 is Case+1,
     test_intro_impossible(Case1, Plat,J).
 
-test_intro_impossible(Case, Plat,J):-
+test_intro_impossible(Case, _,J):-
     J=joueur1,
     Case>6,
     write('Plus de coups possibles: fin du jeu'),
@@ -226,7 +226,7 @@ test_intro_impossible(Case, Plat,J):-
     Case1 is Case+1,
     test_intro_impossible(Case1, Plat,J).
     
-test_intro_impossible(Case, Plat,J):-
+test_intro_impossible(Case, _,J):-
     J=joueur2,
     Case>12,
     write('Plus de coups possibles: fin du jeu'),
@@ -266,7 +266,7 @@ passage_nouvel_etat(Case):-
 	asserta(score_courant1(Score_res2)),
 	asserta(prochain_joueur(joueur2)),
 	afficher_plateau(Plat_res2,J),
-	write('\n\nJoueur suivant=joueur2\n\n'),
+	write('Joueur suivant=joueur2\n\n'),
 	afficher_plateau(Plat_res2,joueur2),!.
     
 passage_nouvel_etat(Case):-
@@ -280,7 +280,7 @@ passage_nouvel_etat(Case):-
 	asserta(score_courant2(Score_res2)),
 	asserta(prochain_joueur(joueur1)),
 	afficher_plateau(Plat_res2,J),
-	write('\n\nJoueur suivant=joueur1\n'),
+	write('Joueur suivant=joueur1\n'),
 	afficher_plateau(Plat_res2,joueur1),!.
  
 % créé l'état suivant du plateau et de la partie pour le jeu de la case Case
@@ -290,7 +290,7 @@ etat_suivant(Case,Score,Plat):-
 	Val = 0,
 	prochain_joueur(J),
 	J = joueur1,
-	score_courant1(Score).
+	score_courant1(Score),!.
 	
 etat_suivant(Case,Score_res,Plat_res):-
 	prochain_joueur(J),
@@ -329,39 +329,44 @@ derniere_case_non_nulle(L,Case):-
 	premiere_case_non_nulle(LI,C),
 	Case is 6-C+1.
 
-% met à jour la valeur de la meilleure case à jouer
+% met à jour la valeur de la meilleure case à jouer si c'est nécessaire
 % échoue volontairement à tous le coups sauf à la dernière case non nulle du joueur
 % pour assurer que toutes les posssibilités sont étudiées
 % cette version est randomisée pour un choix aléatoire parmi les coups équivalents
-maj_meilleure_case(Nv_score,Case,Nv_plat):-
+maj_eventuelle_meilleure_case(Nv_score,Case,Nv_plat):-
 	meilleur_score(Score),
 	Nv_score > Score,
-	retractall(meilleur_score(_)),
-	retractall(meilleure_case(_)),
-	retractall(meilleur_plateau(_)),
-	asserta(meilleur_score(Nv_score)),
-	asserta(meilleure_case(Case)),
-	asserta(meilleur_plateau(Nv_plat)),!,
+	maj_meilleure_case(Nv_score,Case,Nv_plat),!,
 	derniere_case_non_nulle_champ_courant(Case).
 
-maj_meilleure_case(Nv_score,Case,Nv_plat):-
+maj_eventuelle_meilleure_case(Nv_score,Case,Nv_plat):-
+	meilleur_score(Score),
+	Nv_score = Score,
+	meilleure_case(0),
+	maj_meilleure_case(Nv_score,Case,Nv_plat),!,
+	derniere_case_non_nulle_champ_courant(Case).
+
+maj_eventuelle_meilleure_case(Nv_score,Case,Nv_plat):-
 	meilleur_score(Score),
 	Nv_score = Score,
 	random(R),R > 0.5,
+	maj_meilleure_case(Nv_score,Case,Nv_plat),!,
+	derniere_case_non_nulle_champ_courant(Case).
+
+maj_eventuelle_meilleure_case(_,Case,_):- derniere_case_non_nulle_champ_courant(Case).
+
+maj_meilleure_case(Nv_score,Case,Nv_plat):-
 	retractall(meilleur_score(_)),
 	retractall(meilleure_case(_)),
 	retractall(meilleur_plateau(_)),
 	asserta(meilleur_score(Nv_score)),
 	asserta(meilleure_case(Case)),
-	asserta(meilleur_plateau(Nv_plat)),!,
-	derniere_case_non_nulle_champ_courant(Case).
-
-maj_meilleure_case(_,Case,_):- derniere_case_non_nulle_champ_courant(Case).
+	asserta(meilleur_plateau(Nv_plat)).
 
 % ce prédicat est appelé sur chaque case de 1 à 6 par generer_etats
 generer_etats_interne(Case):-
 	etat_suivant(Case,Score_res,Plat_res),
-	maj_meilleure_case(Score_res,Case,Plat_res).
+	maj_eventuelle_meilleure_case(Score_res,Case,Plat_res).
  
 % génère tous les états possibles après un coup depuis l'état courant,
 % initialise les variables meilleure_case et meilleur_score
@@ -500,16 +505,16 @@ afficher_gagnant:-
     score_courant1(Score1),
     score_courant2(Score2),
     Score1 > Score2,
-    write('\nLe joueur 1 a gagné !'),!,true.
+    write('\nLe joueur 1 a gagné !'),!.
  
 afficher_gagnant:-
     score_courant1(Score1),
     score_courant2(Score2),
     Score1 < Score2,
-    write('\nLe joueur 2 a gagné !'),!,true.
+    write('\nLe joueur 2 a gagné !'),!.
  
 afficher_gagnant:-
     score_courant1(Score1),
     score_courant2(Score2),
     Score1 = Score2,
-    write('\nEx-aequo !'),!,true.
+    write('\nEx-aequo !'),!.
