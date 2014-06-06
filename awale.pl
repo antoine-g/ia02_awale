@@ -107,11 +107,6 @@ deplacer_case(joueur2,_,Case,_,_):-
     Case < 7,
     write('Impossible de jouer cette case\n'),
     !,fail.
-
-deplacer_case(_, Plat, Case, _, _):-
-    val_case(Plat, Case, Val),
-    Val = 0,
-    asserta(erreur('La case choisie est vide!')),!,fail.
     
 deplacer_case(_, Plat, Case, Res_plat, Case_finale):-
     val_case(Plat, Case, Val),
@@ -157,7 +152,7 @@ init:- P = [4,4,4,4,4,4,4,4,4,4,4,4],
     asserta(score_courant1(0)),
     asserta(score_courant2(0)),
     asserta(prochain_joueur(joueur1)),
-	retractall(quitter(0)),
+	asserta(quitter(0)),
     afficher_plateau(P, joueur1),
     nl,
     write('1. Partie humain-humain\n'),
@@ -288,11 +283,20 @@ passage_nouvel_etat(Case):-
 % créé l'état suivant du plateau et de la partie pour le jeu de la case Case
 etat_suivant(Case,Score,Plat):-
 	plat_courant(Plat),
-	val_case(Plat,Case,Val),
-	Val = 0,
 	prochain_joueur(J),
 	J = joueur1,
-	score_courant1(Score),!.
+	val_case(Plat,Case,Val),
+	Val = 0,
+	asserta(erreur('La case choisie est vide!')),!,fail.
+
+etat_suivant(Case,Score,Plat):-
+	plat_courant(Plat),
+	prochain_joueur(J),
+	J = joueur2,
+	Case1 is Case+6,
+	val_case(Plat,Case1,Val),
+	Val = 0,
+	asserta(erreur('La case choisie est vide!')),!,fail.
 	
 etat_suivant(Case,Score_res,Plat_res):-
 	prochain_joueur(J),
