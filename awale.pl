@@ -152,10 +152,12 @@ init:- P = [4,4,4,4,4,4,4,4,4,4,4,4],
     retractall(score_courant1(_)),
     retractall(score_courant2(_)),
     retractall(prochain_joueur(_)),
+	retractall(quitter(_)),
     asserta(plat_courant(P)),
     asserta(score_courant1(0)),
     asserta(score_courant2(0)),
     asserta(prochain_joueur(joueur1)),
+	retractall(quitter(0)),
     afficher_plateau(P, joueur1),
     nl,
     write('1. Partie humain-humain\n'),
@@ -349,7 +351,7 @@ maj_eventuelle_meilleure_case(Nv_score,Case,Nv_plat):-
 maj_eventuelle_meilleure_case(Nv_score,Case,Nv_plat):-
 	meilleur_score(Score),
 	Nv_score = Score,
-	random(R),R > 0.5,
+	random(R),R > 0.75,
 	maj_meilleure_case(Nv_score,Case,Nv_plat),!,
 	derniere_case_non_nulle_champ_courant(Case).
 
@@ -472,9 +474,14 @@ partie_ia_ia:-
     
 tour_de_jeu_humain:-
     \+tester_scores,
-    write('Jouer case n° (1 à 6, terminer par un point, 0 pour quitter):'),
+    write('Jouer case n° (1 à 6, 0 pour quitter, c pour conseil):'),
     read(Case),
     tour_de_jeu_humain_interne(Case),!.
+
+tour_de_jeu_humain:-
+    quitter(B),
+	B = 1,
+    !,fail.
 
 tour_de_jeu_humain:-
     erreur(E),
@@ -490,16 +497,23 @@ tester_scores:-
     score_courant2(S),
     S >= 25,
     afficher_gagnant.
+
+tour_de_jeu_humain_interne(c):-
+	generer_etats,
+	meilleure_case(Case),
+	write('Case conseillee: '),
+	write(Case),nl,!.
  
 tour_de_jeu_humain_interne(Case):-
-    Case =\= 0,
+	Case =\= 0,
     nl,
     passage_nouvel_etat(Case),
     afficher_scores.
-   
-tour_de_jeu_humain_interne(Case):-
-    Case = 0,
-    afficher_gagnant,!.
+
+tour_de_jeu_humain_interne(0):-
+    afficher_gagnant,
+	retractall(quitter(_)),
+	asserta(quitter(1)),!,fail.
  
 afficher_gagnant:-
     score_courant1(Score1),
