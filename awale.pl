@@ -148,11 +148,15 @@ init:- P = [4,4,4,4,4,4,4,4,4,4,4,4],
     retractall(score_courant2(_)),
     retractall(prochain_joueur(_)),
 	retractall(quitter(_)),
+	retractall(nb_coups_total(_)),
+	retractall(nb_coups_sans_gain(_)),
     asserta(plat_courant(P)),
     asserta(score_courant1(0)),
     asserta(score_courant2(0)),
     asserta(prochain_joueur(joueur1)),
 	asserta(quitter(0)),
+	asserta(nb_coups_total(0)),
+	asserta(nb_coups_sans_gain(0)),
     afficher_plateau(P, joueur1),
     nl,
     write('1. Partie humain-humain\n'),
@@ -256,6 +260,7 @@ passage_nouvel_etat(Case):-
 	prochain_joueur(J),
 	J = joueur1,
 	etat_suivant(Case,Score_res2,Plat_res2),
+	maj_compteurs(Score_res2,J),
 	retractall(plat_courant(_)),
 	retractall(score_courant1(_)),
 	retractall(prochain_joueur(_)),
@@ -270,6 +275,7 @@ passage_nouvel_etat(Case):-
 	prochain_joueur(J),
 	J = joueur2,
 	etat_suivant(Case,Score_res2,Plat_res2),
+	maj_compteurs(Score_res2,J),
 	retractall(plat_courant(_)),
 	retractall(score_courant2(_)),
 	retractall(prochain_joueur(_)),
@@ -304,6 +310,7 @@ etat_suivant(Case,Score_res,Plat_res):-
 	score_courant1(Score),
 	plat_courant(Plat),
 	deplacer_case(J,Plat,Case,Plat_tmp,Case_finale),
+	\+champ_adverse_vide_et_pas_insertion(Plat_tmp, J),
 	recuperer_billes(J,Case_finale,Plat_tmp, Plat_res,Score,Score_res),
 	\+champ_adverse_vide(Plat_res, J),!.
  
@@ -314,6 +321,7 @@ etat_suivant(Case,Score_res,Plat_res):-
 	score_courant2(Score),
 	plat_courant(Plat),
 	deplacer_case(J,Plat,Case_tmp,Plat_tmp,Case_finale),
+	\+champ_adverse_vide_et_pas_insertion(Plat_tmp, J),
 	recuperer_billes(J,Case_finale,Plat_tmp, Plat_res,Score,Score_res),
 	\+champ_adverse_vide(Plat_res, J),!.
  
@@ -415,6 +423,7 @@ tour_de_jeu_ia:-
 	nl,
 	afficher_plateau(Plat,J),
 	meilleur_score(Score),
+	maj_compteurs(Score,J),
 	retractall(plat_courant(_)),
 	retractall(score_courant1(_)),
 	retractall(prochain_joueur(_)),
@@ -435,6 +444,7 @@ tour_de_jeu_ia:-
 	nl,
 	afficher_plateau(Plat,J),
 	meilleur_score(Score),
+	maj_compteurs(Score,J),
 	retractall(plat_courant(_)),
 	retractall(score_courant2(_)),
 	retractall(prochain_joueur(_)),
@@ -443,6 +453,37 @@ tour_de_jeu_ia:-
 	asserta(prochain_joueur(joueur1)),
 	afficher_scores,
 	afficher_plateau(Plat,joueur1),!.
+	
+maj_compteurs(Nv_score,J):-
+	J = joueur1,
+	score_courant1(Score),
+	Score = Nv_score,
+	nb_coups_sans_gain(N),
+	N1 is N+1,
+	retractall(nb_coups_sans_gain(_)),
+	asserta(nb_coups_sans_gain(N1)),
+	incr_nb_coups_total,!.
+
+maj_compteurs(Nv_score,J):-
+	J = joueur2,
+	score_courant2(Score),
+	Score = Nv_score,
+	nb_coups_sans_gain(N),
+	N1 is N+1,
+	retractall(nb_coups_sans_gain(_)),
+	asserta(nb_coups_sans_gain(N1)),
+	incr_nb_coups_total,!.
+
+maj_compteurs(_,_):-
+	retractall(nb_coups_sans_gain(_)),
+	asserta(nb_coups_sans_gain(0)),
+	incr_nb_coups_total.
+
+incr_nb_coups_total:-
+	nb_coups_total(NT),
+	NT1 is NT+1,
+	retractall(nb_coups_total(_)),
+	asserta(nb_coups_total(NT1)).
  
 afficher_scores:-
 	score_courant1(Score1),
@@ -454,6 +495,7 @@ afficher_scores:-
 
 partie_humain_ia:-
     \+tester_scores,
+	\+tester_cycle,
     prochain_joueur(J),
     J=joueur1,
     tour_de_jeu_humain,
@@ -461,6 +503,7 @@ partie_humain_ia:-
 
 partie_humain_ia:-
     \+tester_scores,
+	\+tester_cycle,
     prochain_joueur(J),
     J=joueur2,
     tour_de_jeu_ia,
@@ -473,11 +516,13 @@ partie_humain_humain:-
 
 partie_ia_ia:-
 	\+tester_scores,
+	\+tester_cycle,
     tour_de_jeu_ia,
     partie_ia_ia,!.
     
 tour_de_jeu_humain:-
     \+tester_scores,
+	\+tester_cycle,
     write('Jouer case n° (1 à 6, 0 pour quitter, c pour conseil):'),
     read(Case),
     tour_de_jeu_humain_interne(Case),!.
@@ -502,6 +547,32 @@ tester_scores:-
     S >= 25,
     afficher_gagnant.
 
+tester_cycle:-
+	nb_coups_sans_gain(N),
+	N > 12,
+	write('\nLe jeu semble cycler la partie va s\'arreter, chaque joueur prend les graines de son champ.\n'),
+	ramasser_graines_de_son_champ,
+	afficher_gagnant.
+	
+ramasser_graines_de_son_champ:-
+	plat_courant(Plat),
+	passage_sous_listes(Plat, [L1,L2]),
+	somme_liste(L1,Res1),
+	somme_liste(L2,Res2),
+	score_courant1(Score1),
+	score_courant2(Score2),
+	Nv_score1 is Score1 + Res1,
+	Nv_score2 is Score2 + Res2,
+	retractall(score_courant1(_)),
+	retractall(score_courant2(_)),
+	asserta(score_courant1(Nv_score1)),
+	asserta(score_courant2(Nv_score2)),
+	retractall(plat_courant(_)),
+	asserta(plat_courant([0,0,0,0,0,0,0,0,0,0,0,0])).
+
+somme_liste([],0).
+somme_liste([T|Q],Res):- somme_liste(Q,Res1), Res is Res1 + T.
+
 tour_de_jeu_humain_interne(c):-
 	generer_etats,
 	meilleure_case(Case),
@@ -523,16 +594,27 @@ afficher_gagnant:-
     score_courant1(Score1),
     score_courant2(Score2),
     Score1 > Score2,
+	afficher_scores,
+	afficher_nb_coups_total,
     write('\nLe joueur 1 a gagné !'),!.
  
 afficher_gagnant:-
     score_courant1(Score1),
     score_courant2(Score2),
     Score1 < Score2,
+	afficher_scores,
+	afficher_nb_coups_total,
     write('\nLe joueur 2 a gagné !'),!.
  
 afficher_gagnant:-
     score_courant1(Score1),
     score_courant2(Score2),
     Score1 = Score2,
+	afficher_scores,
+	afficher_nb_coups_total,
     write('\nEx-aequo !'),!.
+
+afficher_nb_coups_total:-
+	nb_coups_total(N),
+	write('\nNombres de coups joués:'),
+	write(N).
