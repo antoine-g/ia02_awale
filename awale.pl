@@ -146,14 +146,14 @@ init:- P = [4,4,4,4,4,4,4,4,4,4,4,4],
     retractall(plat_courant(_)),
     retractall(score_courant1(_)),
     retractall(score_courant2(_)),
-    retractall(prochain_joueur(_)),
+    retractall(joueur_courant(_)),
 	retractall(quitter(_)),
 	retractall(nb_coups_total(_)),
 	retractall(nb_coups_sans_gain(_)),
     asserta(plat_courant(P)),
     asserta(score_courant1(0)),
     asserta(score_courant2(0)),
-    asserta(prochain_joueur(joueur1)),
+    asserta(joueur_courant(joueur1)),
 	asserta(quitter(0)),
 	asserta(nb_coups_total(0)),
 	asserta(nb_coups_sans_gain(0)),
@@ -165,17 +165,6 @@ init:- P = [4,4,4,4,4,4,4,4,4,4,4,4],
     write('Reponse:'),
     read(Rep),
     traitement_reponse(Rep).
- 
-init2:- P = [4,4,4,4,4,4,0,0,0,0,0,1],
-    retractall(plat_courant(_)),
-    retractall(score_courant1(_)),
-    retractall(score_courant2(_)),
-    retractall(prochain_joueur(_)),
-    asserta(plat_courant(P)),
-    asserta(score_courant1(0)),
-    asserta(score_courant2(0)),
-    asserta(prochain_joueur(joueur1)),
-    afficher_plateau(P, joueur1).
 
 % Réponse à la question de init
 traitement_reponse(1):- partie_humain_humain.
@@ -257,47 +246,47 @@ champ_adverse_vide(Plat, J):-
 	asserta(erreur('Vous devez introduire au moins une graine dans le champ adverse!')).
    
 passage_nouvel_etat(Case):-
-	prochain_joueur(J),
+	joueur_courant(J),
 	J = joueur1,
 	etat_suivant(Case,Score_res2,Plat_res2),
 	maj_compteurs(Score_res2,J),
 	retractall(plat_courant(_)),
 	retractall(score_courant1(_)),
-	retractall(prochain_joueur(_)),
+	retractall(joueur_courant(_)),
 	asserta(plat_courant(Plat_res2)),
 	asserta(score_courant1(Score_res2)),
-	asserta(prochain_joueur(joueur2)),
+	asserta(joueur_courant(joueur2)),
 	afficher_plateau(Plat_res2,J),
 	write('Joueur suivant=joueur2\n\n'),
 	afficher_plateau(Plat_res2,joueur2),!.
     
 passage_nouvel_etat(Case):-
-	prochain_joueur(J),
+	joueur_courant(J),
 	J = joueur2,
 	etat_suivant(Case,Score_res2,Plat_res2),
 	maj_compteurs(Score_res2,J),
 	retractall(plat_courant(_)),
 	retractall(score_courant2(_)),
-	retractall(prochain_joueur(_)),
+	retractall(joueur_courant(_)),
 	asserta(plat_courant(Plat_res2)),
 	asserta(score_courant2(Score_res2)),
-	asserta(prochain_joueur(joueur1)),
+	asserta(joueur_courant(joueur1)),
 	afficher_plateau(Plat_res2,J),
 	write('Joueur suivant=joueur1\n'),
 	afficher_plateau(Plat_res2,joueur1),!.
  
 % créé l'état suivant du plateau et de la partie pour le jeu de la case Case
-etat_suivant(Case,Score,Plat):-
+etat_suivant(Case,_,Plat):-
 	plat_courant(Plat),
-	prochain_joueur(J),
+	joueur_courant(J),
 	J = joueur1,
 	val_case(Plat,Case,Val),
 	Val = 0,
 	asserta(erreur('La case choisie est vide!')),!,fail.
 
-etat_suivant(Case,Score,Plat):-
+etat_suivant(Case,_,Plat):-
 	plat_courant(Plat),
-	prochain_joueur(J),
+	joueur_courant(J),
 	J = joueur2,
 	Case1 is Case+6,
 	val_case(Plat,Case1,Val),
@@ -305,7 +294,7 @@ etat_suivant(Case,Score,Plat):-
 	asserta(erreur('La case choisie est vide!')),!,fail.
 	
 etat_suivant(Case,Score_res,Plat_res):-
-	prochain_joueur(J),
+	joueur_courant(J),
 	J = joueur1,
 	score_courant1(Score),
 	plat_courant(Plat),
@@ -315,7 +304,7 @@ etat_suivant(Case,Score_res,Plat_res):-
 	\+champ_adverse_vide(Plat_res, J),!.
  
 etat_suivant(Case,Score_res,Plat_res):-
-	prochain_joueur(J),
+	joueur_courant(J),
 	J = joueur2,
 	Case_tmp is Case+6,
 	score_courant2(Score),
@@ -327,10 +316,10 @@ etat_suivant(Case,Score_res,Plat_res):-
  
 % détermine l'indice de la dernière case non nulle dans le champ du joueur courant
 derniere_case_non_nulle_champ_courant(Case):-
-	prochain_joueur(Joueur),Joueur=joueur1,plat_courant(Plat),passage_sous_listes(Plat,[L|_]),derniere_case_non_nulle(L,Case).
+	joueur_courant(Joueur),Joueur=joueur1,plat_courant(Plat),passage_sous_listes(Plat,[L|_]),derniere_case_non_nulle(L,Case).
 
 derniere_case_non_nulle_champ_courant(Case):-
-	prochain_joueur(Joueur),Joueur=joueur2,plat_courant(Plat),passage_sous_listes(Plat,[_|[L]]),derniere_case_non_nulle(L,Case).
+	joueur_courant(Joueur),Joueur=joueur2,plat_courant(Plat),passage_sous_listes(Plat,[_|[L]]),derniere_case_non_nulle(L,Case).
 
 % détermine l'indice du premier élement non nul de la liste, 1er élement à l'indice 1
 premiere_case_non_nulle([0|Q],Res):- premiere_case_non_nulle(Q,Res1), Res is Res1+1,!.
@@ -388,7 +377,7 @@ generer_etats:-
 	retractall(meilleur_score(_)),
 	retractall(meilleure_case(_)),
 	retractall(meilleur_plateau(_)),
-	prochain_joueur(J),
+	joueur_courant(J),
 	J = joueur2,
 	score_courant2(Score),
 	plat_courant(Plat),
@@ -402,7 +391,7 @@ generer_etats:-
 	retractall(meilleur_score(_)),
 	retractall(meilleure_case(_)),
 	retractall(meilleur_plateau(_)),
-	prochain_joueur(J),
+	joueur_courant(J),
 	J = joueur1,
 	score_courant1(Score),
 	plat_courant(Plat),
@@ -413,7 +402,7 @@ generer_etats:-
 	generer_etats_interne(X),!.
              
 tour_de_jeu_ia:-
-	prochain_joueur(J),
+	joueur_courant(J),
 	J = joueur1,
 	generer_etats,
 	meilleur_plateau(Plat),
@@ -426,15 +415,15 @@ tour_de_jeu_ia:-
 	maj_compteurs(Score,J),
 	retractall(plat_courant(_)),
 	retractall(score_courant1(_)),
-	retractall(prochain_joueur(_)),
+	retractall(joueur_courant(_)),
 	asserta(plat_courant(Plat)),
 	asserta(score_courant1(Score)),
-	asserta(prochain_joueur(joueur2)),
+	asserta(joueur_courant(joueur2)),
 	afficher_scores,
 	afficher_plateau(Plat,joueur2),!.
              
 tour_de_jeu_ia:-
-	prochain_joueur(J),
+	joueur_courant(J),
 	J = joueur2,
 	generer_etats,
 	meilleur_plateau(Plat),
@@ -447,10 +436,10 @@ tour_de_jeu_ia:-
 	maj_compteurs(Score,J),
 	retractall(plat_courant(_)),
 	retractall(score_courant2(_)),
-	retractall(prochain_joueur(_)),
+	retractall(joueur_courant(_)),
 	asserta(plat_courant(Plat)),
 	asserta(score_courant2(Score)),
-	asserta(prochain_joueur(joueur1)),
+	asserta(joueur_courant(joueur1)),
 	afficher_scores,
 	afficher_plateau(Plat,joueur1),!.
 	
@@ -496,7 +485,7 @@ afficher_scores:-
 partie_humain_ia:-
     \+tester_scores,
 	\+tester_cycle,
-    prochain_joueur(J),
+    joueur_courant(J),
     J=joueur1,
     tour_de_jeu_humain,
     partie_humain_ia,!.
@@ -504,7 +493,7 @@ partie_humain_ia:-
 partie_humain_ia:-
     \+tester_scores,
 	\+tester_cycle,
-    prochain_joueur(J),
+    joueur_courant(J),
     J=joueur2,
     tour_de_jeu_ia,
     partie_humain_ia,!.
