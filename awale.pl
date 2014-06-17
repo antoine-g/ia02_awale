@@ -525,20 +525,20 @@ tour_de_jeu_humain:-
 % Boucle faisant alterner un tour de jeu humain et un tour de jeu IA
 % tant que la partie ne doit pas se terminer
 partie_humain_ia:-
+    joueur_courant(J),
+    J=joueur1,!,
     \+tester_scores,
 	\+tester_cycle,
-    joueur_courant(J),
-    J=joueur1,
     tour_de_jeu_humain,
-    partie_humain_ia,!.
+    partie_humain_ia.
 
 partie_humain_ia:-
+    joueur_courant(J),
+    J=joueur2,!,
     \+tester_scores,
 	\+tester_cycle,
-    joueur_courant(J),
-    J=joueur2,
     tour_de_jeu_ia,
-    partie_humain_ia,!.
+    partie_humain_ia.
 
 % Boucle faisant alterner 2 tours de jeu humains
 % tant que la partie ne doit pas se terminer
