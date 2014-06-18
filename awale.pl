@@ -185,12 +185,12 @@ distribuer_graines2(Case_courante, Case_interdite, Nb_graines, Plat, Res_plat, C
 % Deplacer les billes d'une case i en jouant : elle distribue les graines et vide la case d'origine
 deplacer_case(joueur1,_,Case,_,_):-
     Case > 6,
-    write('Impossible de jouer cette case\n'),
+    asserta(erreur('Impossible de jouer cette case\n')),
     !,fail.
    
 deplacer_case(joueur2,_,Case,_,_):-
     Case < 7,
-    write('Impossible de jouer cette case\n'),
+    asserta(erreur('Impossible de jouer cette case\n')),
     !,fail.
     
 deplacer_case(_, Plat, Case, Res_plat, Case_finale):-
