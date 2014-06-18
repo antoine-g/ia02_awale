@@ -110,16 +110,14 @@ afficher_jolie_liste([T|Q]) :-
     afficher_jolie_liste(Q).
  
 % Affiche l'ensemble du plateau de jeux, orienté en fonction du joueur
-afficher_plateau(Plat,Joueur):-
-    Joueur = joueur1,
+afficher_plateau(Plat,joueur1):-
     sous_listes_plat_j1(Plat,[L1,L2]),
     write('Joueur2: '),
     afficher_jolie_liste(L1),
     write('Joueur1: '),
     afficher_jolie_liste(L2),!.
  
-afficher_plateau(Plat,Joueur):-
-    Joueur = joueur2,
+afficher_plateau(Plat,joueur2):-
     sous_listes_plat_j2(Plat,[L1,L2]),
     write('Joueur1: '),
     afficher_jolie_liste(L1),
@@ -199,12 +197,10 @@ deplacer_case(_, Plat, Case, Res_plat, Case_finale):-
     vider_case(Tmp_plat, Case, Res_plat).
    
 % Récupérer les billes éventuellement gagnées par le joueur suite à son déplacement
-recuperer_billes(J,Case_courante, Plat, Plat, Score, Score):-
-	J=joueur1,
+recuperer_billes(joueur1,Case_courante, Plat, Plat, Score, Score):-
 	Case_courante<7.
 
-recuperer_billes(J,Case_courante, Plat, Plat, Score, Score):-
-	J=joueur2,
+recuperer_billes(joueur2,Case_courante, Plat, Plat, Score, Score):-
 	Case_courante>=7.
 
 recuperer_billes(J,Case_courante, Plat, Res_plat, Score, Res_score):-
@@ -223,56 +219,48 @@ recuperer_billes(_,_, Plat, Res_plat, Score, Res_score):-
 % Vérifie si le joueur peut introduire au moins une bille dans le champ adverse en jouant toutes les 
 % cases de son plateau
 % Echoue si une introduction est possible
-test_intro_impossible(Case, Plat,J):-
-    J=joueur1,
+test_intro_impossible(Case, Plat,joueur1):-
     Case>=1,
     Case=<6,
-    deplacer_case(J,Plat,Case,Plat_tmp,_),!,
+    deplacer_case(joueur1,Plat,Case,Plat_tmp,_),!,
     que_des_zeros(Plat_tmp, 7,12),
     Case1 is Case+1,
-    test_intro_impossible(Case1, Plat,J).
+    test_intro_impossible(Case1, Plat,joueur1).
 
-test_intro_impossible(Case, _,J):-
-    J=joueur1,
+test_intro_impossible(Case, _,joueur1):-
     Case>6,
     write('Plus de coups possibles: fin du jeu'),
     afficher_gagnant,!.
     
-test_intro_impossible(Case, Plat,J):-
-    J=joueur2,
+test_intro_impossible(Case, Plat,joueur2):-
     Case>=7,
     Case=<12,
-    deplacer_case(J,Plat,Case,Plat_tmp,_),!,
+    deplacer_case(joueur2,Plat,Case,Plat_tmp,_),!,
     que_des_zeros(Plat_tmp, 1,6),
     Case1 is Case+1,
-    test_intro_impossible(Case1, Plat,J).
+    test_intro_impossible(Case1, Plat,joueur2).
     
-test_intro_impossible(Case, _,J):-
-    J=joueur2,
+test_intro_impossible(Case, _,joueur2):-
     Case>12,
     write('Plus de coups possibles: fin du jeu'),
     afficher_gagnant,!.
     
 % Vérifie que le champ de l'adversaire ne contient pas que des zéros et dans le cas contraire empêche un mouvement qui n'introduit pas de graine
-champ_adverse_vide_et_pas_insertion(Plat, J):-
-    J = joueur1,
+champ_adverse_vide_et_pas_insertion(Plat, joueur1):-
     que_des_zeros(Plat, 7, 12),
-    \+test_intro_impossible(1, Plat,J),
+    \+test_intro_impossible(1, Plat,joueur1),
     asserta(erreur('Vous devez introduire au moins une graine dans le champ adverse!')),!,fail.
 
-champ_adverse_vide_et_pas_insertion(Plat, J):-
-    J = joueur2,
+champ_adverse_vide_et_pas_insertion(Plat, joueur2):-
     que_des_zeros(Plat, 1, 6),
-    \+test_intro_impossible(7, Plat,J),
+    \+test_intro_impossible(7, Plat,joueur2),
     asserta(erreur('Vous devez introduire au moins une graine dans le champ adverse!')),!,fail.
 
-champ_adverse_vide(Plat, J):-
-    J = joueur1,
+champ_adverse_vide(Plat, joueur1):-
     que_des_zeros(Plat, 7, 12),
 	asserta(erreur('Vous devez introduire au moins une graine dans le champ adverse!')).
 
-champ_adverse_vide(Plat, J):-
-    J = joueur2,
+champ_adverse_vide(Plat, joueur2):-
     que_des_zeros(Plat, 1, 6),
 	asserta(erreur('Vous devez introduire au moins une graine dans le champ adverse!')).
  
@@ -282,16 +270,14 @@ champ_adverse_vide(Plat, J):-
 % et que le champ adverse n'est pas vide une fois les graines ramassées
 etat_suivant(Case,_,Plat):-
 	plat_courant(Plat),
-	joueur_courant(J),
-	J = joueur1,
+	joueur_courant(joueur1),
 	val_case(Plat,Case,Val),
 	Val = 0,
 	asserta(erreur('La case choisie est vide!')),!,fail.
 
 etat_suivant(Case,_,Plat):-
 	plat_courant(Plat),
-	joueur_courant(J),
-	J = joueur2,
+	joueur_courant(joueur2),
 	Case1 is Case+6,
 	val_case(Plat,Case1,Val),
 	Val = 0,
@@ -326,15 +312,13 @@ derniere_case_non_nulle(L,Case):-
 
 % Détermine l'indice de la dernière case non nulle dans le champ du joueur courant (1 à 6)
 derniere_case_non_nulle_champ_courant(Case):-
-	joueur_courant(Joueur),
-	Joueur=joueur1,
+	joueur_courant(joueur1),
 	plat_courant(Plat),
 	passage_sous_listes(Plat,[L|_]),
 	derniere_case_non_nulle(L,Case).
 
 derniere_case_non_nulle_champ_courant(Case):-
-	joueur_courant(Joueur),
-	Joueur=joueur2,
+	joueur_courant(joueur2),
 	plat_courant(Plat),
 	passage_sous_listes(Plat,[_|[L]]),
 	derniere_case_non_nulle(L,Case).
@@ -389,8 +373,7 @@ generer_etats:-
 	retractall(meilleur_score(_)),
 	retractall(meilleure_case(_)),
 	retractall(meilleur_plateau(_)),
-	joueur_courant(J),
-	J = joueur2,
+	joueur_courant(joueur2),
 	score_courant2(Score),
 	plat_courant(Plat),
 	asserta(meilleur_score(Score)),
@@ -403,8 +386,7 @@ generer_etats:-
 	retractall(meilleur_score(_)),
 	retractall(meilleure_case(_)),
 	retractall(meilleur_plateau(_)),
-	joueur_courant(J),
-	J = joueur1,
+	joueur_courant(joueur1),
 	score_courant1(Score),
 	plat_courant(Plat),
 	asserta(meilleur_score(Score)),
@@ -528,16 +510,14 @@ tour_de_jeu_humain:-
 % Boucle faisant alterner un tour de jeu humain et un tour de jeu IA
 % tant que la partie ne doit pas se terminer
 partie_humain_ia:-
-    joueur_courant(J),
-    J=joueur1,!,
+    joueur_courant(joueur1),!,
     \+tester_scores,
 	\+tester_cycle,
     tour_de_jeu_humain,
     partie_humain_ia.
 
 partie_humain_ia:-
-    joueur_courant(J),
-    J=joueur2,!,
+    joueur_courant(joueur2),!,
     \+tester_scores,
 	\+tester_cycle,
     tour_de_jeu_ia,
@@ -599,8 +579,7 @@ ramasser_graines_de_son_champ:-
 
 % Met à jour 2 compteurs : nb total de tours qui sert à afficher la valeur à la fin de la partie
 % et nb de coups sans gain qui permet de détecter les cycles
-maj_compteurs(Nv_score,J):-
-	J = joueur1,
+maj_compteurs(Nv_score,joueur1):-
 	score_courant1(Score),
 	Score = Nv_score,
 	nb_coups_sans_gain(N),
@@ -609,8 +588,7 @@ maj_compteurs(Nv_score,J):-
 	asserta(nb_coups_sans_gain(N1)),
 	incr_nb_coups_total,!.
 
-maj_compteurs(Nv_score,J):-
-	J = joueur2,
+maj_compteurs(Nv_score,joueur2):-
 	score_courant2(Score),
 	Score = Nv_score,
 	nb_coups_sans_gain(N),
