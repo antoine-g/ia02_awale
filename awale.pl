@@ -379,6 +379,9 @@ maj_meilleure_case(Nv_score,Case,Nv_plat):-
 generer_etats_interne(Case):-
 	etat_suivant(Case,Score_res,Plat_res),
 	maj_eventuelle_meilleure_case(Score_res,Case,Plat_res).
+
+generer_etats_interne(Case):-
+	derniere_case_non_nulle_champ_courant(Case).
  
 % Génère tous les états possibles après un coup depuis l'état courant,
 % initialise les variables meilleure_case, meilleur_score et meilleur_plateau
