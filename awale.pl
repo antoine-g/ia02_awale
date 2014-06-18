@@ -613,10 +613,10 @@ incr_nb_coups_total:-
 afficher_scores:-
 	score_courant1(Score1),
 	score_courant2(Score2),
-	write('Score1:'),
+	write('\nScore1:'),
 	write(Score1),nl,
 	write('Score2:'),
-	write(Score2),nl.
+	write(Score2),nl,nl.
 
 % A la fin de la partie, affiche comme gagnant le joueur ayant obtenu le plus de points
 afficher_gagnant:-
